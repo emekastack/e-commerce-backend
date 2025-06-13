@@ -7,12 +7,10 @@ import { filterXSS } from "xss";
 import { config } from "./config/app.config";
 import { HTTPSTATUS } from "./config/http.config";
 import "./database/database";
-import swaggerUi from 'swagger-ui-express';
 import { asyncHandler } from "./middlewares/asyncHandler";
 import { errorHandler } from "./middlewares/errorHandler";
 import passport from "./middlewares/passport";
 import appRouter from "./routes";
-import { swaggerSpec } from "./config/swagger.config";
 
 const app = express();
 const BASE_PATH = config.BASE_PATH;
@@ -33,17 +31,6 @@ app.use((req, res, next) => {
     next();
 })
 
-// Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Learning Platform API Documentation',
-}));
-
-// Swagger JSON endpoint
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
 
 app.get("/", asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     res.status(HTTPSTATUS.OK).json({
