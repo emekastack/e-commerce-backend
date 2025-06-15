@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import cloudinary from "../config/cloudinary.config";
 
 type AsynControllerType = (
   req: Request,
@@ -12,6 +13,9 @@ export const asyncHandler =
     try {
       await controller(req, res, next);
     } catch (error) {
+      if (req.file) {
+        await cloudinary.uploader.destroy(req.file.filename);
+      }
       next(error);
     }
   };

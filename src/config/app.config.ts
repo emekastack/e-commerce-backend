@@ -9,9 +9,7 @@ const appConfig = () => ({
 
   BREVO_HOST_URL: getEnv("BREVO_HOST_URL"),
   BREVO_USER: getEnv("BREVO_USER"),
-  BREVO_PASS_KEY: getEnv("BREVO_PASS_KEY"),
-
-  ALOC_ACCESS_TOKEN: getEnv("ALOC_ACCESS_TOKEN"),
+  BREVO_PASS_KEY: getEnv("BREVO_PASS_KEY"),  
 
   JWT: {
     SECRET: getEnv("JWT_SECRET"),
@@ -19,6 +17,10 @@ const appConfig = () => ({
     REFRESH_SECRET: getEnv("JWT_REFRESH_SECRET"),
     REFRESH_EXPIRES_IN: getEnv("JWT_REFRESH_EXPIRES_IN", "30d"),
   },
+
+  CLOUDINARY_CLOUD_NAME: getEnv("CLOUDINARY_CLOUD_NAME"),
+  CLOUDINARY_API_KEY: getEnv("CLOUDINARY_API_KEY"),
+  CLOUDINARY_API_SECRET: getEnv("CLOUDINARY_API_SECRET")
 });
 
 export const config = appConfig();

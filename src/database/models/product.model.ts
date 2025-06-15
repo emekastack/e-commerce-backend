@@ -4,8 +4,10 @@ export interface ProductDocument extends Document {
   name: string;
   description: string;
   price: number;
-  category: string;
-  stock: number;
+  imageUrl: string;
+  filename: string;
+  category: mongoose.Types.ObjectId;
+  outOfStock: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,15 +25,20 @@ const productSchema = new Schema<ProductDocument>({
     type: Number,
     required: true,
   },
-  category: {
+  category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
+  outOfStock: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  imageUrl: {
     type: String,
     required: true,
   },
-  stock: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
+  filename: {
+    type: String,
+    required: true
+  }
 }, {
   timestamps: true,
 });
