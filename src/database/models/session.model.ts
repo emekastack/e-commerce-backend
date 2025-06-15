@@ -6,9 +6,7 @@ export interface SessionDocument extends Document {
   userId: mongoose.Types.ObjectId;
   userAgent?: string;
   expiredAt: Date;
-  role: RoleType;
-  name: string;
-  email: string;
+  role: RoleType;  
   createdAt: Date;
 }
 
@@ -26,19 +24,8 @@ const sessionSchema = new Schema<SessionDocument>({
   role: {
     type: String,
     enum: Object.values(Roles),
-    required: true,
-    default: Roles.USER,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true,
-  },
+    required: true,    
+  }, 
   createdAt: {
     type: Date,
     default: Date.now,

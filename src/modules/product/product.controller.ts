@@ -22,7 +22,6 @@ export class ProductController {
     public createProduct = asyncHandler(
         async (req: Request, res: Response) => {
             const image = req?.file;
-            console.log({ image })
             const body = createProductSchema.parse({
                 ...req.body,
                 image: {

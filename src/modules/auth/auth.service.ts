@@ -9,6 +9,8 @@ import { HTTPSTATUS } from "../../config/http.config";
 import SessionModel from "../../database/models/session.model";
 import UserModel from "../../database/models/user.model";
 import VerificationCodeModel from "../../database/models/verification.model";
+import { sendEmail } from "../../mailers/mailer";
+import { passwordResetTemplate, verifyEmailTemplate } from "../../mailers/templates/template";
 import { refreshTokenSignOptions, RefreshTPayload, signJwtToken, verifyJwtToken } from "../../utils/jwt";
 import { logger } from "../../utils/logger";
 
@@ -42,11 +44,11 @@ export class AuthService {
 
         console.log("Verification URL:", verificationUrl);
 
-        // TODO: Setup email sending
-        // await sendEmail({
-        //     to: newUser.email,
-        //     ...verifyEmailTemplate(verificationUrl)
-        // })
+       
+        await sendEmail({
+            to: newUser.email,
+            ...verifyEmailTemplate(verificationUrl)
+        })
 
         return {
             user: newUser,
@@ -88,13 +90,11 @@ export class AuthService {
 
             const verificationUrl = `${config.APP_ORIGIN}/confirm-email?code=${verification.code}`;
 
-            // Send the verification email
-            console.log("Verification URL:", verificationUrl);
-            // TODO: Setup email sending
-            // await sendEmail({
-            //     to: user.email,
-            //     ...verifyEmailTemplate(verificationUrl),
-            // });
+            
+            await sendEmail({
+                to: user.email,
+                ...verifyEmailTemplate(verificationUrl),
+            });
 
             logger.info(`Verification email sent to ${user.email}`);
 
@@ -121,8 +121,7 @@ export class AuthService {
         logger.info(`Creating session for user ID: ${user._id}`);
         const session = await SessionModel.create({
             userId: user._id,
-            name: user.name,
-            email: user.email,
+            role: user.role,
             userAgent,        
         })
 
@@ -217,13 +216,11 @@ export class AuthService {
         const resetLink = `${config.APP_ORIGIN}/reset-password?code=${validCode.code
             }&exp=${expiresAt.getTime()}`;
 
-        console.log("Reset Link:", resetLink);
 
-        //TODO: Setup email sending
-        // await sendEmail({
-        //     to: user.email,
-        //     ...passwordResetTemplate(resetLink),
-        // });
+        await sendEmail({
+            to: user.email,
+            ...passwordResetTemplate(resetLink),
+        });
 
         return {
             url: resetLink,

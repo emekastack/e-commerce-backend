@@ -1,39 +1,25 @@
-import { createTransport } from "nodemailer";
+import sendMail from "@sendgrid/mail"
 import { config } from "../config/app.config";
 
+sendMail.setApiKey(config.SENDGRID_API_KEY);
+
 type Params = {
-  to: string | string[];
-  subject: string;
-  text: string;
-  html: string;
-  from?: string;
+    to: string | string[];
+    subject: string;
+    text: string;
+    html: string;
+    from?: string;
 };
 
-const transporter = createTransport({
-    host: config.BREVO_HOST_URL,
-    port: 465,
-    auth: {
-        user: config.BREVO_USER,
-        pass: config.BREVO_PASS_KEY,
-    }    
-})
-
-export const sendEmail = async ({
-    to,
-    subject,
-    text,
-    html,
-    from = config.BREVO_USER
-}: Params) => {
+export const sendEmail = async (data: Params) => {
     try {
-        const info = await transporter.sendMail({
-            from,
-            to: Array.isArray(to) ? to.join(", ") : to,
-            subject,
-            text,
-            html
+        await sendMail.send({
+            to: data.to,
+            subject: data.subject,
+            text: data.text,
+            html: data.html,
+            from: data.from || config.DEFAULT_EMAIL_FROM,
         });
-        console.log("Email sent: ", info.messageId);
     } catch (error) {
         console.error("Error sending email: ", error);
         throw new Error("Failed to send email");

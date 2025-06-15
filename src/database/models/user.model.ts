@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { compareValue, hashValue } from "../../common/utils/bcrypt";
+import { Roles, RoleType } from "../../common/enums/role.enum";
 
 interface UserPreferences {
   enable2FA: boolean;
@@ -12,6 +13,7 @@ export interface UserDocument extends Document {
   email: string;
   password: string;
   isEmailVerified: boolean;
+  role: RoleType;
   createdAt: Date;
   updatedAt: Date;
   userPreferences: UserPreferences;
@@ -41,6 +43,12 @@ const userSchema = new Schema<UserDocument>(
     isEmailVerified: {
       type: Boolean,
       default: false,
+    },
+    role: {
+      type: String,
+      enum: Object.values(Roles),
+      required: true,
+      default: Roles.USER,
     },
     userPreferences: {
       type: userPreferencesSchema,
