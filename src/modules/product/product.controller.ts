@@ -1,10 +1,8 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../../middlewares/asyncHandler";
 import { createCategorySchema, createProductSchema, productSearchSchema } from "../../common/validators/product.validator";
-import { ProductService } from "./product.service";
-import cloudinary from "../../config/cloudinary.config";
-import { BadRequestException } from "../../common/utils/catch-errors";
 import { HTTPSTATUS } from "../../config/http.config";
+import { asyncHandler } from "../../middlewares/asyncHandler";
+import { ProductService } from "./product.service";
 
 
 export class ProductController {

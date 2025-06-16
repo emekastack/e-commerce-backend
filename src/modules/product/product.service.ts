@@ -119,7 +119,7 @@ export class ProductService {
         // Execute query with aggregation for better performance
         const [products, totalCount] = await Promise.all([
             ProductModel.find(filter)
-                .populate("category", "name description")
+                .populate("category", "name")
                 .sort(sort)
                 .skip(skip)
                 .limit(limit)
@@ -220,7 +220,7 @@ export class ProductService {
 
         const [products, totalCount] = await Promise.all([
             ProductModel.find({ category: categoryId })
-                .populate("category", "name description")
+                .populate("category", "name")
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
