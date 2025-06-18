@@ -24,7 +24,10 @@ const appConfig = () => ({
     NAME: getEnv("ADMIN_NAME"),
     EMAIL: getEnv("ADMIN_EMAIL"),
     PASSWORD: getEnv("ADMIN_PASSWORD")
-  }
+  },
+  //paystack
+  PAYSTACK_SECRET_KEY: getEnv("PAYSTACK_SECRET_KEY"),
+  PAYSTACK_PUBLIC_KEY: getEnv("PAYSTACK_PUBLIC_KEY"),
 });
 
 export const config = appConfig();

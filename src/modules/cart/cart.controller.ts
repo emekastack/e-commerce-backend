@@ -3,7 +3,6 @@ import { asyncHandler } from "../../middlewares/asyncHandler";
 import { addToCartSchema, updateCartItemSchema } from "../../common/validators/product.validator";
 import { CartService } from "./cart.service";
 import { HTTPSTATUS } from "../../config/http.config";
-// import { AuthenticatedRequest } from "../../common/interface/auth.interface";
 
 export class CartController {
     private cartService: CartService;
