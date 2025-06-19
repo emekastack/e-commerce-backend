@@ -122,6 +122,8 @@ export class AuthService {
         const session = await SessionModel.create({
             userId: user._id,
             role: user.role,
+            name: user.name,
+            email: user.email,
             userAgent,        
         })
 
@@ -270,7 +272,6 @@ export class AuthService {
             secret: refreshTokenSignOptions.secret,
         });
         if (!payload) {
-            console.log(`Refresh token error:`, error);
             throw new UnauthorizedException("Invalid refresh token");
         }
 

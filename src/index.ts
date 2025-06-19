@@ -17,10 +17,23 @@ const BASE_PATH = config.BASE_PATH;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = [
+    "http://localhost:8080",
+    config.APP_ORIGIN,
+];
+
 app.use(cors({
-    origin: config.APP_ORIGIN,
+    origin: (origin, callback) => {
+        // allow requests with no origin (like mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            return callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true
-}))
+}));
 app.use(helmet());
 app.use(cookieParser())
 app.use(passport.initialize());

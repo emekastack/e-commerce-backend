@@ -8,10 +8,12 @@ export class UserService {
     if (!session) {
       throw new NotFoundException("Session not found");
     }
-    const { userId, role } = session;
+    const { userId, role , name, email} = session;
     return {
       userId,
-      role     
+      role,
+      name,
+      email    
     };
   }
  
