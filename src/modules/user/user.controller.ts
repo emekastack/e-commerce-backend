@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
+import { NotFoundException } from "../../common/utils/catch-errors";
+import { HTTPSTATUS } from "../../config/http.config";
 import { asyncHandler } from "../../middlewares/asyncHandler";
 import { UserService } from "./user.service";
-import { BadRequestException, NotFoundException } from "../../common/utils/catch-errors";
-import { HTTPSTATUS } from "../../config/http.config";
 
 
 export class UserController {

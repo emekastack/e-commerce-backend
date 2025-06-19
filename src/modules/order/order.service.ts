@@ -40,6 +40,82 @@ export class OrderService {
         this.paystackService = new PaystackService();
     }
 
+    // HANDLE SUCCESSFUL PAYMENT FROM WEBHOOK
+    public async handleSuccessfulPayment(reference: string, paymentData: any) {
+        const order = await OrderModel.findOne({ paymentReference: reference });
+        if (!order) {
+            throw new NotFoundException("Order not found for payment reference");
+        }
+
+        // Only update if payment is still pending
+        if (order.paymentStatus === PaymentStatus.PENDING) {
+            order.paymentStatus = PaymentStatus.SUCCESS;
+            order.orderStatus = OrderStatus.PROCESSING;
+
+            // Store additional payment data if needed
+            if (paymentData.authorization) {
+                order.paymentMethod = paymentData.authorization.brand || order.paymentMethod;
+            }
+
+            await order.save();
+
+
+            // Here you could add additional logic like:
+            // - Send confirmation email to customer
+            // - Update inventory
+            // - Notify admin
+            // - Log the transaction
+
+            console.log(`Order ${order._id} payment confirmed via webhook`);
+        }
+        return order;
+    }
+
+    // HANDLE FAILED PAYMENT FROM WEBHOOK
+    public async handleFailedPayment(reference: string, paymentData: any) {
+        const order = await OrderModel.findOne({ paymentReference: reference });
+        if (!order) {
+            throw new NotFoundException("Order not found for payment reference");
+        }
+
+        // Only update if payment is still pending
+        if (order.paymentStatus === PaymentStatus.PENDING) {
+            order.paymentStatus = PaymentStatus.FAILED;
+            // Optionally cancel the order or keep it pending for retry
+            // order.orderStatus = OrderStatus.CANCELLED;
+
+            await order.save();
+
+            // Here you could add additional logic like:
+            // - Send payment failed email to customer
+            // - Log the failed transaction
+            // - Notify admin of failed payment
+
+            console.log(`Order ${order._id} payment failed via webhook`);
+        }
+
+        return order;
+    }
+
+    // GET PAYMENT STATUS (for frontend polling if needed)
+    public async getPaymentStatus(reference: string) {
+        const order = await OrderModel.findOne({ paymentReference: reference })
+            .select('paymentStatus orderStatus paymentReference')
+            .lean();
+
+        if (!order) {
+            throw new NotFoundException("Order not found");
+        }
+
+        return {
+            reference: order.paymentReference,
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.orderStatus,
+            isPaid: order.paymentStatus === PaymentStatus.SUCCESS,
+            isFailed: order.paymentStatus === PaymentStatus.FAILED,
+        };
+    }
+
     // CREATE ORDER FROM CART
     public async createOrder(orderData: CreateOrderData) {
         const { userId, shippingAddress, paymentMethod = "paystack" } = orderData;
@@ -114,55 +190,52 @@ export class OrderService {
             { $set: { items: [], totalAmount: 0 } }
         );
 
-        const populatedOrder = await OrderModel.findById(order._id)
-            .populate("items.product", "name imageUrl")
-            .populate("userId", "name email");
+        // const populatedOrder = await OrderModel.findById(order._id)
+        //     .populate("items.product", "name imageUrl");            
 
-        return {
-            order: populatedOrder,
+        return {            
             paymentUrl: paymentData.data.authorization_url,
-            paymentReference,
         };
     }
 
-    // VERIFY PAYMENT AND UPDATE ORDER
-    public async verifyPayment(reference: string) {
-        // Find order by payment reference
-        const order = await OrderModel.findOne({ paymentReference: reference });
-        if (!order) {
-            throw new NotFoundException("Order not found");
-        }
+    // // VERIFY PAYMENT AND UPDATE ORDER
+    // public async verifyPayment(reference: string) {
+    //     // Find order by payment reference
+    //     const order = await OrderModel.findOne({ paymentReference: reference });
+    //     if (!order) {
+    //         throw new NotFoundException("Order not found");
+    //     }
 
-        // Verify payment with Paystack
-        const paymentData = await this.paystackService.verifyTransaction(reference);
+    //     // Verify payment with Paystack
+    //     const paymentData = await this.paystackService.verifyTransaction(reference);
 
-        if (paymentData.data.status === "success") {
-            // Update order status
-            order.paymentStatus = PaymentStatus.SUCCESS;
-            order.orderStatus = OrderStatus.PROCESSING;
-            await order.save();
+    //     if (paymentData.data.status === "success") {
+    //         // Update order status
+    //         order.paymentStatus = PaymentStatus.SUCCESS;
+    //         order.orderStatus = OrderStatus.PROCESSING;
+    //         await order.save();
 
-            const populatedOrder = await OrderModel.findById(order._id)
-                .populate("items.product", "name imageUrl")
-                .populate("userId", "name email");
+    //         const populatedOrder = await OrderModel.findById(order._id)
+    //             .populate("items.product", "name imageUrl")
+    //             .populate("userId", "name email");
 
-            return {
-                order: populatedOrder,
-                paymentVerified: true,
-                message: "Payment verified successfully",
-            };
-        } else {
-            // Update payment status to failed
-            order.paymentStatus = PaymentStatus.FAILED;
-            await order.save();
+    //         return {
+    //             order: populatedOrder,
+    //             paymentVerified: true,
+    //             message: "Payment verified successfully",
+    //         };
+    //     } else {
+    //         // Update payment status to failed
+    //         order.paymentStatus = PaymentStatus.FAILED;
+    //         await order.save();
 
-            return {
-                order,
-                paymentVerified: false,
-                message: "Payment verification failed",
-            };
-        }
-    }
+    //         return {
+    //             order,
+    //             paymentVerified: false,
+    //             message: "Payment verification failed",
+    //         };
+    //     }
+    // }
 
     // GET USER ORDERS
     public async getUserOrders(
@@ -213,13 +286,11 @@ export class OrderService {
         }
 
         const order = await OrderModel.findOne(filter)
-            .populate("items.product", "name imageUrl description")
-            .populate("userId", "name email");
+            .populate("items.product", "name imageUrl");
 
         if (!order) {
             throw new NotFoundException("Order not found");
         }
-
         return { order };
     }
 
@@ -305,7 +376,7 @@ export class OrderService {
         };
     }
 
-       // CANCEL ORDER
+    // CANCEL ORDER
     public async cancelOrder(orderId: string, userId?: string) {
         if (!mongoose.Types.ObjectId.isValid(orderId)) {
             throw new BadRequestException("Invalid order ID");
@@ -333,8 +404,7 @@ export class OrderService {
         await order.save();
 
         const populatedOrder = await OrderModel.findById(order._id)
-            .populate("items.product", "name imageUrl")
-            .populate("userId", "name email");
+            .populate("items.product", "name imageUrl");
 
         return { order: populatedOrder, message: "Order cancelled successfully" };
     }

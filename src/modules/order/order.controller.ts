@@ -14,6 +14,32 @@ export class OrderController {
     }
 
     /**
+    * @desc Get payment status by reference
+    * @route GET /orders/payment-status/:reference
+    * @access Public
+    */
+    public getPaymentStatus = asyncHandler(
+        async (req: Request, res: Response) => {
+            const { reference } = req.params;
+
+            if (!reference) {
+                return res.status(HTTPSTATUS.BAD_REQUEST).json({
+                    message: "Payment reference is required"
+                });
+            }
+
+            const result = await this.orderService.getPaymentStatus(reference);
+
+            return res.status(HTTPSTATUS.OK).json({
+                message: "Payment status retrieved successfully",
+                ...result
+            });
+        }
+    );
+
+
+
+    /**
     * @desc Create order from cart
     * @route POST /orders
     * @access Private
@@ -27,16 +53,35 @@ export class OrderController {
                 });
             }
 
-            const validatedData = createOrderSchema.parse(req.body);
+            console.log("REQ.BODY", req.body); // Debug log
+
+            let validatedData;
+            try {
+                validatedData = createOrderSchema.parse(req.body);
+            } catch (err: any) {
+                return res.status(HTTPSTATUS.BAD_REQUEST).json({
+                    message: "Invalid order data",
+                    error: err.errors || err.message,
+                });
+            }
+
+            if (!validatedData || typeof validatedData !== "object") {
+                return res.status(HTTPSTATUS.BAD_REQUEST).json({
+                    message: "Invalid order data"
+                });
+            }
+
 
             const result = await this.orderService.createOrder({
                 userId,
                 ...validatedData,
             });
 
+            console.log("RESULT", result);
+
             return res.status(HTTPSTATUS.CREATED).json({
                 message: "Order created successfully",
-                ...result,
+                result: result.paymentUrl ?? result,
             });
         }
     );
@@ -46,21 +91,21 @@ export class OrderController {
      * @route POST /orders/verify/:reference
      * @access Public
      */
-    public verifyPayment = asyncHandler(
-        async (req: Request, res: Response) => {
-            const { reference } = req.params;
+    // public verifyPayment = asyncHandler(
+    //     async (req: Request, res: Response) => {
+    //         const { reference } = req.params;
 
-            if (!reference) {
-                return res.status(HTTPSTATUS.BAD_REQUEST).json({
-                    message: "Payment reference is required"
-                });
-            }
+    //         if (!reference) {
+    //             return res.status(HTTPSTATUS.BAD_REQUEST).json({
+    //                 message: "Payment reference is required"
+    //             });
+    //         }
 
-            const result = await this.orderService.verifyPayment(reference);
+    //         const result = await this.orderService.verifyPayment(reference);
 
-            return res.status(HTTPSTATUS.OK).json(result);
-        }
-    );
+    //         return res.status(HTTPSTATUS.OK).json(result);
+    //     }
+    // );
 
     /**
      * @desc Get user orders

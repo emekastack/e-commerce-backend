@@ -2,6 +2,7 @@ import axios from "axios"
 import { BadRequestException } from "../../common/utils/catch-errors";
 import { PaystackInitializeResponse, PaystackVerifyResponse } from "../../common/validators/paystack.validator";
 import { config } from "../../config/app.config";
+import crypto from "crypto";
 
 export class PaystackService {
     private readonly baseURL = "https://api.paystack.co";
@@ -20,6 +21,7 @@ export class PaystackService {
             "Content-Type": "application/json",
         };
     }
+  
 
     // Initialize transaction
     async initializeTransaction(
@@ -58,30 +60,31 @@ export class PaystackService {
         }
     }
 
-    //Verify Transaction
-    async verifyTransaction(reference: string): Promise<PaystackVerifyResponse> {
-        try {
-            const response = await axios.get(
-                `${this.baseURL}/transaction/verify/${reference}`,
-                {
-                    headers: this.getHeaders(),
-                }
-            );
+    
+    // //Verify Transaction
+    // async verifyTransaction(reference: string): Promise<PaystackVerifyResponse> {
+    //     try {
+    //         const response = await axios.get(
+    //             `${this.baseURL}/transaction/verify/${reference}`,
+    //             {
+    //                 headers: this.getHeaders(),
+    //             }
+    //         );
 
-            if (!response.data.status) {
-                throw new BadRequestException(
-                    response.data.message || "Failed to verify payment"
-                );
-            }
+    //         if (!response.data.status) {
+    //             throw new BadRequestException(
+    //                 response.data.message || "Failed to verify payment"
+    //             );
+    //         }
 
-            return response.data;
-        } catch (error: any) {
-            if (error.response?.data?.message) {
-                throw new BadRequestException(error.response.data.message);
-            }
-            throw new BadRequestException("Failed to verify payment");
-        }
-    }
+    //         return response.data;
+    //     } catch (error: any) {
+    //         if (error.response?.data?.message) {
+    //             throw new BadRequestException(error.response.data.message);
+    //         }
+    //         throw new BadRequestException("Failed to verify payment");
+    //     }
+    // }
 
     // List Transactions
     async listTransactions(page = 1, perPage = 50) {

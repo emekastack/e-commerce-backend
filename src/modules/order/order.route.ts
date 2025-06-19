@@ -7,7 +7,8 @@ import { adminRoute } from "../../middlewares/adminRoute";
 const orderRoutes = Router();
 
 // Public Routes
-orderRoutes.post("/verify/:reference", orderController.verifyPayment);
+// orderRoutes.post("/verify/:reference", orderController.verifyPayment);
+orderRoutes.get("/payment-status/:reference", orderController.getPaymentStatus);
 
 // Private Routes (Authenticated Users)
 orderRoutes.use(authenticateJWT); // Apply authentication to all routes below
@@ -15,7 +16,7 @@ orderRoutes.use(authenticateJWT); // Apply authentication to all routes below
 orderRoutes.post("/", orderController.createOrder);
 orderRoutes.get("/user", orderController.getUserOrders);
 orderRoutes.get("/:id", orderController.getOrderById);
-orderRoutes.patch("/:id/cancel", orderController.cancelOrder);
+// orderRoutes.patch("/:id/cancel", orderController.cancelOrder);
 
 // Admin Routes (Protected)
 orderRoutes.get("/admin/all", adminRoute, orderController.getAllOrders);
