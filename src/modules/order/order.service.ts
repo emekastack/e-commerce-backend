@@ -193,49 +193,45 @@ export class OrderService {
         // const populatedOrder = await OrderModel.findById(order._id)
         //     .populate("items.product", "name imageUrl");            
 
-        return {            
+        return {
             paymentUrl: paymentData.data.authorization_url,
         };
     }
 
-    // // VERIFY PAYMENT AND UPDATE ORDER
-    // public async verifyPayment(reference: string) {
-    //     // Find order by payment reference
-    //     const order = await OrderModel.findOne({ paymentReference: reference });
-    //     if (!order) {
-    //         throw new NotFoundException("Order not found");
-    //     }
+    // Reinitialize payment (if needed)
+    public async reinitializePayment(orderId: string, userId: string) {
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            throw new NotFoundException("User not found");
+        }
+        const order = await OrderModel.findById(orderId);
+        if (!order) throw new NotFoundException("Order not found");
 
-    //     // Verify payment with Paystack
-    //     const paymentData = await this.paystackService.verifyTransaction(reference);
+        if (order.paymentStatus === PaymentStatus.SUCCESS) {
+            throw new BadRequestException("Order already paid");
+        }
 
-    //     if (paymentData.data.status === "success") {
-    //         // Update order status
-    //         order.paymentStatus = PaymentStatus.SUCCESS;
-    //         order.orderStatus = OrderStatus.PROCESSING;
-    //         await order.save();
+        // Generate new payment reference
+        const newReference = this.paystackService.generateReference();
 
-    //         const populatedOrder = await OrderModel.findById(order._id)
-    //             .populate("items.product", "name imageUrl")
-    //             .populate("userId", "name email");
+        // Initialize payment with Paystack
+        const paymentData = await this.paystackService.initializeTransaction(
+            user.email,
+            order.totalAmount,
+            newReference,
+            {
+                orderId: order._id,
+                userId: order.userId,
+                customerName: order.shippingAddress.firstName + " " + order.shippingAddress.lastName,
+            }
+        );
 
-    //         return {
-    //             order: populatedOrder,
-    //             paymentVerified: true,
-    //             message: "Payment verified successfully",
-    //         };
-    //     } else {
-    //         // Update payment status to failed
-    //         order.paymentStatus = PaymentStatus.FAILED;
-    //         await order.save();
+        // Update order with new payment reference
+        order.paymentReference = newReference;
+        await order.save();
 
-    //         return {
-    //             order,
-    //             paymentVerified: false,
-    //             message: "Payment verification failed",
-    //         };
-    //     }
-    // }
+        return { paymentUrl: paymentData.data.authorization_url };
+    }
 
     // GET USER ORDERS
     public async getUserOrders(

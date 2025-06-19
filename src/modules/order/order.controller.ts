@@ -53,59 +53,46 @@ export class OrderController {
                 });
             }
 
-            console.log("REQ.BODY", req.body); // Debug log
-
-            let validatedData;
-            try {
-                validatedData = createOrderSchema.parse(req.body);
-            } catch (err: any) {
-                return res.status(HTTPSTATUS.BAD_REQUEST).json({
-                    message: "Invalid order data",
-                    error: err.errors || err.message,
-                });
-            }
-
-            if (!validatedData || typeof validatedData !== "object") {
-                return res.status(HTTPSTATUS.BAD_REQUEST).json({
-                    message: "Invalid order data"
-                });
-            }
-
+            const validatedData = createOrderSchema.parse(req.body);
 
             const result = await this.orderService.createOrder({
                 userId,
                 ...validatedData,
             });
 
-            console.log("RESULT", result);
 
             return res.status(HTTPSTATUS.CREATED).json({
-                message: "Order created successfully",
-                result: result.paymentUrl ?? result,
+                message: "Payment link generated successfully",
+                paymentUrl: result.paymentUrl,
             });
         }
     );
 
     /**
-     * @desc Verify payment
-     * @route POST /orders/verify/:reference
-     * @access Public
+     * @desc Get payment URL for order
+     * @route GET /orders/reinitilize/:orderId
+     * @access Private
      */
-    // public verifyPayment = asyncHandler(
-    //     async (req: Request, res: Response) => {
-    //         const { reference } = req.params;
+    public reinitializePayment = asyncHandler(
+        async (req: Request, res: Response) => {
+            const { orderId } = req.params;
+            const userId = (req as any).user?.userId;
 
-    //         if (!reference) {
-    //             return res.status(HTTPSTATUS.BAD_REQUEST).json({
-    //                 message: "Payment reference is required"
-    //             });
-    //         }
+            if (!userId) {
+                return res.status(HTTPSTATUS.UNAUTHORIZED).json({
+                    message: "User not authenticated"
+                });
+            }
 
-    //         const result = await this.orderService.verifyPayment(reference);
+            const result = await this.orderService.reinitializePayment(orderId, userId);
 
-    //         return res.status(HTTPSTATUS.OK).json(result);
-    //     }
-    // );
+            return res.status(HTTPSTATUS.OK).json({
+                message: "Payment URL retrieved successfully",
+                paymentUrl: result.paymentUrl,
+            });
+        }
+    )
+
 
     /**
      * @desc Get user orders

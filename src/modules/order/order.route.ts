@@ -14,6 +14,7 @@ orderRoutes.get("/payment-status/:reference", orderController.getPaymentStatus);
 orderRoutes.use(authenticateJWT); // Apply authentication to all routes below
 
 orderRoutes.post("/", orderController.createOrder);
+orderRoutes.get("/reinitialize/:orderId", orderController.reinitializePayment);
 orderRoutes.get("/user", orderController.getUserOrders);
 orderRoutes.get("/:id", orderController.getOrderById);
 // orderRoutes.patch("/:id/cancel", orderController.cancelOrder);
