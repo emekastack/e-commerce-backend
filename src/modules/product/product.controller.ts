@@ -14,7 +14,7 @@ export class ProductController {
 
     /**
      * @desc User registration
-     * @route POST /product/create
+     * @route POST /product
      * @access Public
      */
     public createProduct = asyncHandler(
@@ -22,12 +22,10 @@ export class ProductController {
             const image = req?.file;
             const body = createProductSchema.parse({
                 ...req.body,
-                image: {
-                    imageUrl: image?.path,
-                    fileName: image?.filename,
-                }
-            });
-
+                price: req.body.price ? Number(req.body.price) : undefined,
+                outOfStock: req.body.outOfStock === "true" ? true : req.body.outOfStock === "false" ? false : undefined,
+                image: req.file,
+            });            
             const { product } = await this.productService.createProduct(body);
 
             return res.status(HTTPSTATUS.CREATED).json({

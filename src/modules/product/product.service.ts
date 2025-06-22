@@ -21,8 +21,8 @@ export class ProductService {
             category,
             description,
             outOfStock: outOfStock ?? false,
-            imageUrl: image.imageUrl,
-            filename: image.fileName
+            imageUrl: image.path,
+            filename: image.filename,
         })
 
         return { product }
@@ -159,7 +159,7 @@ export class ProductService {
 
     // GET CATEGORIES
     public async getCategories(): Promise<{ categories: any[] }> {
-        const categories = await CategoryModel.find().sort({ name: 1 }).lean();
+        const categories = await CategoryModel.find({}, {_id: 1, name: 1, description: 1}).sort({ name: 1 }).lean();
         return { categories };
     }
 

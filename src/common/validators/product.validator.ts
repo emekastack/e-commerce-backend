@@ -6,10 +6,20 @@ export const createProductSchema = z.object({
   price: z.number().positive("Price must be positive"),
   category: z.string().min(1, "Category is required"),
   outOfStock: z.boolean().optional(),
-  image: z.object({
-    imageUrl: z.string().min(1, "Image URL is required"),
-    fileName: z.string().min(1, "File name is required"),
-  }),
+  image: z
+    .custom<Express.Multer.File>((file) => {
+      if (!file) return false; // now required
+      const { mimetype, size } = file;
+      const validMimeTypes = ["image/jpeg", "image/png", "image/gif"];
+      if (!validMimeTypes.includes(mimetype)) {
+        return false;
+      }
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (size > maxSize) {
+        return false;
+      }
+      return true;
+    }, { message: "Invalid file type or file size exceeds 5MB" }),
 });
 
 export const createCategorySchema = z.object({

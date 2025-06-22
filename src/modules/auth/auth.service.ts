@@ -215,7 +215,9 @@ export class AuthService {
             expiresAt,
         });
 
-        const resetLink = `${config.APP_ORIGIN}/reset-password?code=${validCode.code
+        const origin = user.role === "ADMIN" ? config.APP_ORIGIN_ADMIN : config.APP_ORIGIN;
+
+        const resetLink = `${origin}/reset-password?code=${validCode.code
             }&exp=${expiresAt.getTime()}`;
 
 

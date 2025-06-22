@@ -49,10 +49,10 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
         req.sessionId = payload.sessionId;
         return done(null, user);
       } catch (error) {
-         if (req && req.res) {
           console.log("DELETING: SETUPJWTSTRATEGY:2")
-            clearAuthenticationCookies(req.res)
-          } 
+        //  if (req && req.res) {
+        //     clearAuthenticationCookies(req.res)
+        //   } 
         return done(error, false);
       }
     })

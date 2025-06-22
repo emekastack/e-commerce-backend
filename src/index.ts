@@ -18,7 +18,7 @@ const BASE_PATH = config.BASE_PATH;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
-    "http://localhost:8080",
+    config.APP_ORIGIN_ADMIN,
     config.APP_ORIGIN,
 ];
 

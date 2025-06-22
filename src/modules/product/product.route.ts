@@ -6,7 +6,7 @@ import { upload } from "../../config/multer.config";
 
 const productRoutes = Router();
 // Admin Routes (Protected)
-productRoutes.post("/create-post", authenticateJWT, adminRoute, upload.single("file"), productController.createProduct);
+productRoutes.post("/", authenticateJWT, adminRoute, upload.single("file"), productController.createProduct);
 productRoutes.post("/create-category", authenticateJWT, adminRoute, productController.createCategory);
 productRoutes.put("/:id", authenticateJWT, adminRoute, upload.single("file"), productController.updateProduct);
 productRoutes.delete("/:id", authenticateJWT, adminRoute, productController.deleteProduct);
