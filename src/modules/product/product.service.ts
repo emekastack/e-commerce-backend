@@ -5,6 +5,7 @@ import CategoryModel from "../../database/models/category.model";
 import { BadRequestException, NotFoundException } from "../../common/utils/catch-errors";
 import { PaginationResult } from "../../common/interface/product.inteface";
 import mongoose from "mongoose";
+import cloudinary from "../../config/cloudinary.config";
 
 export class ProductService {
     //CREATE PRODUCT
@@ -44,6 +45,21 @@ export class ProductService {
         });
 
         return { category }
+    }
+
+    // UPDATE CATEGORY
+    public async updateCategory(categoryId: string, updateData: any) {
+        if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+            throw new BadRequestException("Invalid category ID");
+        }
+
+        const category = await CategoryModel.findByIdAndUpdate(categoryId, updateData);
+
+        if (!category) {
+            throw new NotFoundException("Category not found");
+        }
+
+        return { message: "Category updated successfully" };
     }
 
     // SEARCH PRODUCT
@@ -159,12 +175,36 @@ export class ProductService {
 
     // GET CATEGORIES
     public async getCategories(): Promise<{ categories: any[] }> {
-        const categories = await CategoryModel.find({}, {_id: 1, name: 1, description: 1}).sort({ name: 1 }).lean();
+        const categories = await CategoryModel.find({}, { _id: 1, name: 1, description: 1 }).sort({ name: 1 }).lean();
         return { categories };
     }
 
+    public async getCategoriesWithCount(): Promise<{ categories: any[] }> {
+        // Get all categories
+        const categories = await CategoryModel.find({}, { _id: 1, name: 1, description: 1, createdAt: 1 }).sort({ name: 1 }).lean();
+
+        // Get product counts per category using aggregation
+        const productCounts = await ProductModel.aggregate([
+            { $group: { _id: "$category", count: { $sum: 1 } } }
+        ]);
+
+        // Map category _id to product count
+        const countMap = productCounts.reduce((acc, curr) => {
+            acc[curr._id?.toString()] = curr.count;
+            return acc;
+        }, {} as Record<string, number>);
+
+        // Attach product count to each category
+        const categoriesWithCount = categories.map(cat => ({
+            ...cat,
+            productCount: countMap[cat._id.toString()] || 0
+        }));
+
+        return { categories: categoriesWithCount };
+    }
+
     // UPDATE PRODUCT
-    public async updateProduct(productId: string, updateData: Partial<z.infer<typeof createProductSchema>>) {
+    public async updateProduct(productId: string, updateData: any) {
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             throw new BadRequestException("Invalid product ID");
         }
@@ -182,11 +222,22 @@ export class ProductService {
             }
         }
 
+        // Handle image update
+        if (updateData.image) {
+            // Delete old image from Cloudinary if it exists
+            if (product.filename) {
+                await cloudinary.uploader.destroy(product.filename);
+            }
+            updateData.imageUrl = updateData.image.path;
+            updateData.filename = updateData.image.filename;
+            delete updateData.image;
+        }
+
+
         const updatedProduct = await ProductModel.findByIdAndUpdate(
             productId,
-            { $set: updateData },
-            { new: true, runValidators: true }
-        ).populate("category", "name description");
+            { $set: updateData }
+        )
 
         return { product: updatedProduct };
     }
@@ -200,6 +251,11 @@ export class ProductService {
         const product = await ProductModel.findByIdAndDelete(productId);
         if (!product) {
             throw new NotFoundException("Product not found");
+        }
+
+        // Delete image from Cloudinary if it exists
+        if (product.filename) {
+            await cloudinary.uploader.destroy(product.filename);
         }
 
         return { message: "Product deleted successfully" };
@@ -242,5 +298,57 @@ export class ProductService {
                 limit,
             },
         };
+    }
+
+    // GET CATEGORIES STATS
+    public async getCategoriesStats() {
+        // Total categories
+        const totalCategories = await CategoryModel.countDocuments();
+
+        // Calculate previous month range
+        const now = new Date();
+        const firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const firstDayOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        // Categories added in previous month
+        const categoriesLastMonth = await CategoryModel.countDocuments({
+            createdAt: {
+                $gte: firstDayOfPrevMonth,
+                $lt: firstDayOfThisMonth,
+            },
+        });
+
+        // Total products across all categories
+        const totalProducts = await ProductModel.countDocuments();
+
+        // Average products per category
+        const avgProductsPerCategory = totalCategories > 0 ? (totalProducts / totalCategories) : 0;
+
+        return {
+            totalCategories,
+            categoriesLastMonth,
+            totalProducts,
+            avgProductsPerCategory: Number(avgProductsPerCategory.toFixed(2)),
+        };
+    }
+
+    // DELETE CATEGORY
+    public async deleteCategory(categoryId: string) {
+        if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+            throw new BadRequestException("Invalid category ID");
+        }
+
+        // Check if the category has any products
+        const productCount = await ProductModel.countDocuments({ category: categoryId });
+        if (productCount > 0) {
+            throw new BadRequestException("Cannot delete category with existing products");
+        }
+
+        const category = await CategoryModel.findByIdAndDelete(categoryId);
+        if (!category) {
+            throw new NotFoundException("Category not found");
+        }
+
+        return { message: "Category deleted successfully" };
     }
 }

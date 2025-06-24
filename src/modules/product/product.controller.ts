@@ -25,7 +25,7 @@ export class ProductController {
                 price: req.body.price ? Number(req.body.price) : undefined,
                 outOfStock: req.body.outOfStock === "true" ? true : req.body.outOfStock === "false" ? false : undefined,
                 image: req.file,
-            });            
+            });
             const { product } = await this.productService.createProduct(body);
 
             return res.status(HTTPSTATUS.CREATED).json({
@@ -57,7 +57,46 @@ export class ProductController {
         }
     )
 
+   /**
+    * @desc Update category
+    * @route PUT /product/update-category/:id
+    * @access Admin
+    */
+    public updateCategory = asyncHandler(
+        async (req: Request, res: Response) => {
+            const { id } = req.params;
+            const body = createCategorySchema.parse({
+                ...req.body
+            })
+
+            const { message } = await this.productService.updateCategory(id, body);
+
+            return res.status(HTTPSTATUS.OK).json({
+                message
+            });
+
+        }
+    )
+
     /**
+    * @desc Delete category
+    * @route DELETE /product/delete-category/:id
+    * @access Admin
+    */
+    public deleteCategory = asyncHandler(
+        async (req: Request, res: Response) => {
+            const { id } = req.params;
+
+            const { message } = await this.productService.deleteCategory(id);
+
+            return res.status(HTTPSTATUS.OK).json({
+                message
+            });
+
+        }
+    )
+
+   /**
    * @desc Search products
    * @route GET /product/search
    * @access Public
@@ -162,14 +201,14 @@ export class ProductController {
             const { id } = req.params;
             const image = req?.file;
 
-            let updateData = { ...req.body };
+            let updateData: any = {
+                ...req.body,
+                price: req.body.price ? Number(req.body.price) : undefined,
+                outOfStock: req.body.outOfStock === "true" ? true : req.body.outOfStock === "false" ? false : undefined,
+            };
 
-            // If new image is uploaded, include it in update data
             if (image) {
-                updateData.image = {
-                    imageUrl: image.path,
-                    fileName: image.filename,
-                };
+                updateData.image = image;
             }
 
             const { product } = await this.productService.updateProduct(id, updateData);
@@ -210,6 +249,40 @@ export class ProductController {
 
             return res.status(HTTPSTATUS.OK).json({
                 message: "Products retrieved successfully",
+                ...result
+            });
+        }
+    )
+
+    /**
+     * @desc Get category stats
+     * @route GET /product/category/stats
+     * @access Public
+     */
+    public getCategoriesStats = asyncHandler(
+        async (req: Request, res: Response) => {
+
+            const result = await this.productService.getCategoriesStats();
+
+            return res.status(HTTPSTATUS.OK).json({
+                message: "Categories stats retrieved successfully",
+                ...result
+            });
+        }
+    )
+
+    /**
+     * @desc Get Categories With Product Count
+     * @route GET /product/categories-with-count
+     * @access Public
+     */
+    public getCategoriesWithCount = asyncHandler(
+        async (req: Request, res: Response) => {
+
+            const result = await this.productService.getCategoriesWithCount();
+
+            return res.status(HTTPSTATUS.OK).json({
+                message: "Categories with product count retrieved successfully",
                 ...result
             });
         }

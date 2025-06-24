@@ -60,6 +60,16 @@ const userSchema = new Schema<UserDocument>(
     toJSON: {},
   }
 );
+
+// Index for email (for search and uniqueness)
+userSchema.index({ email: 1 }, { unique: true });
+
+// Index for name (for search)
+userSchema.index({ name: 1 });
+
+// Index for createdAt (for sorting)
+userSchema.index({ createdAt: 1 });
+
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await hashValue(this.password);

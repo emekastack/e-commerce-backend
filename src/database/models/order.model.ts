@@ -143,6 +143,9 @@ const orderSchema = new Schema<OrderDocument>(
   }
 );
 
+// Index for userId (for lookups)
+orderSchema.index({ userId: 1 });
+
 const OrderModel = mongoose.model<OrderDocument>("Order", orderSchema);
 
 export default OrderModel;

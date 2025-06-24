@@ -3,6 +3,7 @@ import { NotFoundException } from "../../common/utils/catch-errors";
 import { HTTPSTATUS } from "../../config/http.config";
 import { asyncHandler } from "../../middlewares/asyncHandler";
 import { UserService } from "./user.service";
+import { customerSearchSchema } from "../../common/validators/product.validator";
 
 
 export class UserController {
@@ -26,5 +27,24 @@ export class UserController {
             user,
         })
     })
-   
+
+    /**
+    * @desc Get all customers
+    * @route GET /user/all-customers
+    * @access Admin
+    */
+    public getAllCustomers = asyncHandler(async (req: Request, res: Response) => {
+        const searchParams = customerSearchSchema.parse({
+            q: req.query.q,
+            sortOrder: req.query.sortOrder ? String(req.query.sortOrder) : "desc",
+            page: req.query.page ? Number(req.query.page) : 1,
+            limit: req.query.limit ? Number(req.query.limit) : 10,
+        });
+
+        const result = await this.userService.searchCustomers(searchParams);
+        return res.status(HTTPSTATUS.OK).json({
+            message: "Customers retrieved successfully",
+            ...result
+        });
+    });
 }

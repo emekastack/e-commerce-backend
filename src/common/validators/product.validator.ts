@@ -39,6 +39,13 @@ export const productSearchSchema = z.object({
   inStock: z.boolean().optional(), // Filter by stock status
 });
 
+export const customerSearchSchema = z.object({
+  q: z.string().optional(), // Search query
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
+  page: z.number().min(1).optional().default(1), // Pagination
+  limit: z.number().min(1).max(100).optional().default(10), // Pagination
+});
+
 export const addToCartSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
   quantity: z.number().positive("Quantity must be positive"),
