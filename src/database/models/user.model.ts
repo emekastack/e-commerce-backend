@@ -61,8 +61,6 @@ const userSchema = new Schema<UserDocument>(
   }
 );
 
-// Index for email (for search and uniqueness)
-userSchema.index({ email: 1 }, { unique: true });
 
 // Index for name (for search)
 userSchema.index({ name: 1 });

@@ -6,6 +6,7 @@ import { BadRequestException, NotFoundException } from "../../common/utils/catch
 import { PaginationResult } from "../../common/interface/product.inteface";
 import mongoose from "mongoose";
 import cloudinary from "../../config/cloudinary.config";
+import OrderModel from "../../database/models/order.model";
 
 export class ProductService {
     //CREATE PRODUCT
@@ -226,7 +227,10 @@ export class ProductService {
         if (updateData.image) {
             // Delete old image from Cloudinary if it exists
             if (product.filename) {
-                await cloudinary.uploader.destroy(product.filename);
+                const isImageInOrders = await OrderModel.exists({ "items.imageUrl": product.imageUrl });
+                if (!isImageInOrders) {
+                    await cloudinary.uploader.destroy(product.filename);
+                }
             }
             updateData.imageUrl = updateData.image.path;
             updateData.filename = updateData.image.filename;
@@ -248,15 +252,22 @@ export class ProductService {
             throw new BadRequestException("Invalid product ID");
         }
 
-        const product = await ProductModel.findByIdAndDelete(productId);
+        // Find the product first (do not delete yet)
+        const product = await ProductModel.findById(productId);
         if (!product) {
             throw new NotFoundException("Product not found");
         }
 
-        // Delete image from Cloudinary if it exists
+        // Only delete the image from Cloudinary if it's not referenced in any order
         if (product.filename) {
-            await cloudinary.uploader.destroy(product.filename);
+            const isImageInOrders = await OrderModel.exists({ "items.imageUrl": product.imageUrl });
+            if (!isImageInOrders) {
+                await cloudinary.uploader.destroy(product.filename);
+            }
         }
+
+        // Now delete the product
+        await ProductModel.findByIdAndDelete(productId);
 
         return { message: "Product deleted successfully" };
     }

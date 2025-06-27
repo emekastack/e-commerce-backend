@@ -151,6 +151,7 @@ export class OrderService {
                 quantity: cartItem.quantity,
                 price: product.price, // Use current product price
                 name: product.name,
+                imageUrl: product.imageUrl,
             };
 
             orderItems.push(orderItem);
@@ -281,8 +282,7 @@ export class OrderService {
             filter.userId = userId;
         }
 
-        const order = await OrderModel.findOne(filter)
-            .populate("items.product", "name imageUrl");
+        const order = await OrderModel.findOne(filter)            
 
         if (!order) {
             throw new NotFoundException("Order not found");
@@ -304,11 +304,11 @@ export class OrderService {
         order.orderStatus = orderStatus;
         await order.save();
 
-        const populatedOrder = await OrderModel.findById(order._id)
-            .populate("items.product", "name imageUrl")
-            .populate("userId", "name email");
+        // const populatedOrder = await OrderModel.findById(order._id);
+            // .populate("items.product", "name imageUrl")
+            // .populate("userId", "name email");
 
-        return { order: populatedOrder };
+        return { message: "Order updated succecc" };
     }
 
     // GET ALL ORDERS (Admin only)
@@ -326,6 +326,7 @@ export class OrderService {
         // Build filter object
         const filter: any = {};
 
+        
         if (userId && mongoose.Types.ObjectId.isValid(userId)) {
             filter.userId = new mongoose.Types.ObjectId(userId);
         }
@@ -348,7 +349,7 @@ export class OrderService {
 
         const [orders, totalCount] = await Promise.all([
             OrderModel.find(filter)
-                .populate("items.product", "name imageUrl")
+                .select("userId items totalAmount orderStatus paymentStatus createdAt")
                 .populate("userId", "name email")
                 .sort({ createdAt: -1 })
                 .skip(skip)
@@ -357,10 +358,15 @@ export class OrderService {
             OrderModel.countDocuments(filter),
         ]);
 
+        const processedOrders = orders.map(order => ({
+            ...order,
+            items: Array.isArray(order.items) ? order.items.length : 0,
+        }));
+
         const totalPages = Math.ceil(totalCount / limit);
 
         return {
-            data: orders,
+            data: processedOrders,
             pagination: {
                 currentPage: page,
                 totalPages,

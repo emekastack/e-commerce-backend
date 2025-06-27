@@ -1,10 +1,12 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { type } from "os";
 
 export interface OrderItemDocument extends Document {
   product: mongoose.Types.ObjectId;
   quantity: number;
   price: number;
   name: string;
+  imageUrl: string;
 }
 
 export interface ShippingAddressDocument extends Document {
@@ -65,6 +67,10 @@ const orderItemSchema = new Schema<OrderItemDocument>({
     type: String,
     required: true,
   },
+  imageUrl: {
+    type: String,
+    required: true,
+  }
 });
 
 const shippingAddressSchema = new Schema<ShippingAddressDocument>({

@@ -154,11 +154,10 @@ export class OrderController {
             const { id } = req.params;
             const validatedData = updateOrderStatusSchema.parse(req.body);
 
-            const result = await this.orderService.updateOrderStatus(id, validatedData.orderStatus);
+            const { message } = await this.orderService.updateOrderStatus(id, validatedData.orderStatus);
 
             return res.status(HTTPSTATUS.OK).json({
-                message: "Order status updated successfully",
-                ...result,
+                message
             });
         }
     );
