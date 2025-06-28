@@ -12,8 +12,8 @@ export const REFRESH_PATH = `${config.BASE_PATH}/auth/refresh-token`;
 
 const defaults: CookieOptions = {
   httpOnly: true,
-  secure: true,
-  sameSite: "strict"
+  secure: false,
+  sameSite: "lax"
   // secure: config.NODE_ENV === "production" ? true : false,
   // sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
 };
