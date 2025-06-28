@@ -12,7 +12,8 @@ const logFormat = format.combine(
 
 // Create logger instance
 export const logger = createLogger({
-  level: config.NODE_ENV === "production" ? "info" : "debug",
+  // level: config.NODE_ENV === "production" ? "info" : "debug",
+  level: "debug",
   format: logFormat,
   transports: [
     new transports.Console(),
