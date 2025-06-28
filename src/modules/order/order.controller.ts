@@ -248,4 +248,20 @@ export class OrderController {
         }
     );
 
+    /**
+     * @desc Get comprehensive dashboard statistics (Admin only)
+     * @route GET /orders/admin/dashboard
+     * @access Admin
+     */
+    public getDashboardStats = asyncHandler(
+        async (req: Request, res: Response) => {
+            const dashboardStats = await this.orderService.getDashboardStats();
+
+            return res.status(HTTPSTATUS.OK).json({
+                message: "Dashboard statistics retrieved successfully",
+                ...dashboardStats,
+            });
+        }
+    );
+
 }

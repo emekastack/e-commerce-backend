@@ -22,7 +22,6 @@ export class PaystackService {
         };
     }
   
-
     // Initialize transaction
     async initializeTransaction(
         email: string,

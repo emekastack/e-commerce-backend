@@ -24,4 +24,7 @@ orderRoutes.get("/admin/all", adminRoute, orderController.getAllOrders);
 orderRoutes.get("/admin/stats", adminRoute, orderController.getOrderStats);
 orderRoutes.patch("/:id/status", adminRoute, orderController.updateOrderStatus);
 
+// Dashboard Route (Admin only)
+orderRoutes.get("/admin/dashboard", adminRoute, orderController.getDashboardStats);
+
 export default orderRoutes;

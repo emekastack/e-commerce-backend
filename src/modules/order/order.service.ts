@@ -308,7 +308,7 @@ export class OrderService {
             // .populate("items.product", "name imageUrl")
             // .populate("userId", "name email");
 
-        return { message: "Order updated succecc" };
+        return { message: "Order updated successful" };
     }
 
     // GET ALL ORDERS (Admin only)
@@ -409,5 +409,247 @@ export class OrderService {
             .populate("items.product", "name imageUrl");
 
         return { order: populatedOrder, message: "Order cancelled successfully" };
+    }
+
+    // GET DASHBOARD STATISTICS
+    public async getDashboardStats() {
+        const now = new Date();
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        
+        const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+        // Get current month statistics
+        const [
+            currentMonthRevenue,
+            currentMonthOrders,
+            currentMonthCustomers,
+            currentMonthProducts
+        ] = await Promise.all([
+            this.getRevenueForPeriod(currentMonthStart, currentMonthEnd),
+            this.getOrdersForPeriod(currentMonthStart, currentMonthEnd),
+            this.getCustomersForPeriod(currentMonthStart, currentMonthEnd),
+            this.getProductsForPeriod(currentMonthStart, currentMonthEnd)
+        ]);
+
+        // Get previous month statistics
+        const [
+            previousMonthRevenue,
+            previousMonthOrders,
+            previousMonthCustomers,
+            previousMonthProducts
+        ] = await Promise.all([
+            this.getRevenueForPeriod(previousMonthStart, previousMonthEnd),
+            this.getOrdersForPeriod(previousMonthStart, previousMonthEnd),
+            this.getCustomersForPeriod(previousMonthStart, previousMonthEnd),
+            this.getProductsForPeriod(previousMonthStart, previousMonthEnd)
+        ]);
+
+        // Get all-time totals
+        const [
+            totalRevenue,
+            totalOrders,
+            totalCustomers,
+            totalProducts
+        ] = await Promise.all([
+            this.getTotalRevenue(),
+            this.getTotalOrders(),
+            this.getTotalCustomers(),
+            this.getTotalProducts()
+        ]);
+
+        // Calculate percentage changes
+        const revenueChange = this.calculatePercentageChange(currentMonthRevenue, previousMonthRevenue);
+        const ordersChange = this.calculatePercentageChange(currentMonthOrders, previousMonthOrders);
+        const customersChange = this.calculatePercentageChange(currentMonthCustomers, previousMonthCustomers);
+        const productsChange = this.calculatePercentageChange(currentMonthProducts, previousMonthProducts);
+
+        return {
+            revenue: {
+                total: totalRevenue,
+                currentMonth: currentMonthRevenue,
+                previousMonth: previousMonthRevenue,
+                percentageChange: revenueChange.percentage,
+                changeType: revenueChange.changeType
+            },
+            orders: {
+                total: totalOrders,
+                currentMonth: currentMonthOrders,
+                previousMonth: previousMonthOrders,
+                percentageChange: ordersChange.percentage,
+                changeType: ordersChange.changeType
+            },
+            customers: {
+                total: totalCustomers,
+                currentMonth: currentMonthCustomers,
+                previousMonth: previousMonthCustomers,
+                percentageChange: customersChange.percentage,
+                changeType: customersChange.changeType
+            },
+            products: {
+                total: totalProducts,
+                currentMonth: currentMonthProducts,
+                previousMonth: previousMonthProducts,
+                percentageChange: productsChange.percentage,
+                changeType: productsChange.changeType
+            },
+            period: {
+                currentMonth: {
+                    start: currentMonthStart,
+                    end: currentMonthEnd
+                },
+                previousMonth: {
+                    start: previousMonthStart,
+                    end: previousMonthEnd
+                }
+            }
+        };
+    }
+
+    // Helper method to calculate percentage change
+    private calculatePercentageChange(current: number, previous: number) {
+        let percentage = 0;
+        let changeType: 'increase' | 'decrease' | 'no-change' = 'no-change';
+
+        if (previous > 0) {
+            percentage = ((current - previous) / previous) * 100;
+            changeType = percentage > 0 ? 'increase' : percentage < 0 ? 'decrease' : 'no-change';
+        } else if (current > 0) {
+            percentage = 100; // If previous was 0 and current has value
+            changeType = 'increase';
+        }
+
+        return {
+            percentage: Math.round(percentage * 100) / 100, // Round to 2 decimal places
+            changeType
+        };
+    }
+
+    // Get total revenue
+    private async getTotalRevenue(): Promise<number> {
+        const result = await OrderModel.aggregate([
+            {
+                $match: {
+                    paymentStatus: PaymentStatus.SUCCESS,
+                    orderStatus: { $ne: OrderStatus.CANCELLED }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$totalAmount" }
+                }
+            }
+        ]);
+
+        return result.length > 0 ? result[0].totalRevenue : 0;
+    }
+
+    // Get revenue for specific period
+    private async getRevenueForPeriod(startDate: Date, endDate: Date): Promise<number> {
+        const result = await OrderModel.aggregate([
+            {
+                $match: {
+                    paymentStatus: PaymentStatus.SUCCESS,
+                    orderStatus: { $ne: OrderStatus.CANCELLED },
+                    createdAt: {
+                        $gte: startDate,
+                        $lte: endDate
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$totalAmount" }
+                }
+            }
+        ]);
+
+        return result.length > 0 ? result[0].totalRevenue : 0;
+    }
+
+    // Get total orders
+    private async getTotalOrders(): Promise<number> {
+        return await OrderModel.countDocuments({
+            paymentStatus: PaymentStatus.SUCCESS,
+            orderStatus: { $ne: OrderStatus.CANCELLED }
+        });
+    }
+
+    // Get orders for specific period
+    private async getOrdersForPeriod(startDate: Date, endDate: Date): Promise<number> {
+        return await OrderModel.countDocuments({
+            paymentStatus: PaymentStatus.SUCCESS,
+            orderStatus: { $ne: OrderStatus.CANCELLED },
+            createdAt: {
+                $gte: startDate,
+                $lte: endDate
+            }
+        });
+    }
+
+    // Get total customers (unique users who have made successful orders)
+    private async getTotalCustomers(): Promise<number> {
+        const result = await OrderModel.aggregate([
+            {
+                $match: {
+                    paymentStatus: PaymentStatus.SUCCESS,
+                    orderStatus: { $ne: OrderStatus.CANCELLED }
+                }
+            },
+            {
+                $group: {
+                    _id: "$userId"
+                }
+            },
+            {
+                $count: "totalCustomers"
+            }
+        ]);
+
+        return result.length > 0 ? result[0].totalCustomers : 0;
+    }
+
+    // Get customers for specific period
+    private async getCustomersForPeriod(startDate: Date, endDate: Date): Promise<number> {
+        const result = await OrderModel.aggregate([
+            {
+                $match: {
+                    paymentStatus: PaymentStatus.SUCCESS,
+                    orderStatus: { $ne: OrderStatus.CANCELLED },
+                    createdAt: {
+                        $gte: startDate,
+                        $lte: endDate
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: "$userId"
+                }
+            },
+            {
+                $count: "totalCustomers"
+            }
+        ]);
+
+        return result.length > 0 ? result[0].totalCustomers : 0;
+    }
+
+    // Get total products
+    private async getTotalProducts(): Promise<number> {
+        return await ProductModel.countDocuments();
+    }
+
+    // Get products for specific period (products created in that period)
+    private async getProductsForPeriod(startDate: Date, endDate: Date): Promise<number> {
+        return await ProductModel.countDocuments({
+            createdAt: {
+                $gte: startDate,
+                $lte: endDate
+            }
+        });
     }
 }
