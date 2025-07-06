@@ -264,4 +264,28 @@ export class OrderController {
         }
     );
 
+
+    /**
+     * @desc Get user's last shipping address
+     * @route GET /orders/user/last-address
+     * @access Private
+     */
+    public getUserLastAddress = asyncHandler(
+        async (req: Request, res: Response) => {
+            const userId = (req as any).user?.userId;
+            if (!userId) {
+                return res.status(HTTPSTATUS.UNAUTHORIZED).json({
+                    message: "User not authenticated"
+                });
+            }
+
+            const lastAddress = await this.orderService.getUserLastShippingAddress(userId);
+
+            return res.status(HTTPSTATUS.OK).json({
+                message: "Last shipping address retrieved successfully",
+                shippingAddress: lastAddress
+            });
+        }
+    );
+
 }

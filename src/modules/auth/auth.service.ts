@@ -45,10 +45,10 @@ export class AuthService {
         console.log("Verification URL:", verificationUrl);
 
        
-        await sendEmail({
-            to: newUser.email,
-            ...verifyEmailTemplate(verificationUrl)
-        })
+        // await sendEmail({
+        //     to: newUser.email,
+        //     ...verifyEmailTemplate(verificationUrl)
+        // })
 
         return {
             user: newUser,
