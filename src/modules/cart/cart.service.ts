@@ -13,12 +13,9 @@ export class CartService {
         const cart = await CartModel.findOne({ userId })
             .populate({
                 path: "items.product",
-                select: "name description price imageUrl outOfStock category",
-                populate: {
-                    path: "category",
-                    select: "name",
-                },
-            });
+                select: "name price imageUrl",
+            })
+            .select("items totalAmount");
 
         if (!cart) {
             // Create empty cart if it doesn't exist
@@ -27,10 +24,14 @@ export class CartService {
                 items: [],
                 totalAmount: 0,
             });
-            return { cart: newCart };
+            return { cart: newCart, total: 0, itemCount: 0 };
         }
 
-        return { cart };
+        // Calculate total and item count
+        const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const itemCount = cart.items.reduce((count, item) => count + item.quantity, 0);
+
+        return { cart, total, itemCount };
     }
 
     // ADD TO CART
@@ -66,6 +67,10 @@ export class CartService {
             // Update quantity if item exists
             cart.items[existingItemIndex].quantity += quantity;
         } else {
+            // Check if adding this new item would exceed the 10 item limit
+            if (cart.items.length >= 10) {
+                throw new BadRequestException("Cart cannot have more than 10 items. Please check outbefore adding new ones.");
+            }
             // Add new item to cart
             cart.items.push({
                 product: new mongoose.Types.ObjectId(productId),
@@ -77,16 +82,17 @@ export class CartService {
         await cart.save();
 
         // Populate the cart before returning
-        const populatedCart = await CartModel.findById(cart._id).populate({
-            path: "items.product",
-            select: "name description price imageUrl outOfStock category",
-            populate: {
-                path: "category",
-                select: "name",
-            },
-        });
+        // const populatedCart = await CartModel.findById(cart._id)
+        // .populate({
+        //     path: "items.product",
+        //     select: "name description price imageUrl outOfStock category",
+        //     populate: {
+        //         path: "category",
+        //         select: "name",
+        //     },
+        // });
 
-        return { cart: populatedCart };
+        return { message: "Item added successfully" };
     }
 
     // UPDATE CART ITEM
@@ -117,16 +123,16 @@ export class CartService {
         await cart.save();
 
         // Populate the cart before returning
-        const populatedCart = await CartModel.findById(cart._id).populate({
-            path: "items.product",
-            select: "name description price imageUrl outOfStock category",
-            populate: {
-                path: "category",
-                select: "name",
-            },
-        });
+        // const populatedCart = await CartModel.findById(cart._id).populate({
+        //     path: "items.product",
+        //     select: "name description price imageUrl outOfStock category",
+        //     populate: {
+        //         path: "category",
+        //         select: "name",
+        //     },
+        // });
 
-        return { cart: populatedCart };
+        return { message: "Cart item update successfully" };
     }
 
     // REMOVE FROM CART
@@ -148,16 +154,16 @@ export class CartService {
         await cart.save();
 
         // Populate the cart before returning
-        const populatedCart = await CartModel.findById(cart._id).populate({
-            path: "items.product",
-            select: "name description price imageUrl outOfStock category",
-            populate: {
-                path: "category",
-                select: "name",
-            },
-        });
+        // const populatedCart = await CartModel.findById(cart._id).populate({
+        //     path: "items.product",
+        //     select: "name description price imageUrl outOfStock category",
+        //     populate: {
+        //         path: "category",
+        //         select: "name",
+        //     },
+        // });
 
-        return { cart: populatedCart };
+        return { message: "Cart item removed successfully" };
     }
 
     // CLEAR CART
@@ -181,10 +187,12 @@ export class CartService {
             return { count: 0 };
         }
 
-        const count = cart.items.reduce((total, item) => total + item.quantity, 0);
+        // const count = cart.items.reduce((total, item) => total + item.quantity, 0);
+        const count = cart.items.length;
         return { count };
     }
 
+   
 
     // VALIDATE CART ITEMS
     public async validateCartItems(userId: string): Promise<{ isValid: boolean; errors: string[] }> {
