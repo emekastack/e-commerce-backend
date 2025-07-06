@@ -317,7 +317,7 @@ export class OrderService {
       throw new NotFoundException("No previous orders found");
     }
 
-    return { shippingAddress: lastOrder.shippingAddress };
+    return { ...lastOrder.shippingAddress };
   }
 
   // UPDATE ORDER STATUS (Admin only)
