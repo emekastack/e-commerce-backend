@@ -283,15 +283,15 @@ export class OrderService {
   }
 
   // GET ORDER BY ID
-  public async getOrderById(orderId: string, userId?: string) {
+  public async getOrderById(orderId: string) {
     if (!mongoose.Types.ObjectId.isValid(orderId)) {
       throw new BadRequestException("Invalid order ID");
     }
 
     const filter: any = { _id: orderId };
-    if (userId) {
-      filter.userId = userId;
-    }
+    // if (userId) {
+    //   filter.userId = userId;
+    // }
 
     const order = await OrderModel.findOne(filter);
 

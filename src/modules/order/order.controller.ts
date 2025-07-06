@@ -133,9 +133,9 @@ export class OrderController {
             const userRole = (req as any).user?.role;
 
             // If user is not admin, only allow them to view their own orders
-            const filterUserId = userRole === "admin" ? undefined : userId;
+            // const filterUserId = userRole === "admin" ? undefined : userId;
 
-            const result = await this.orderService.getOrderById(id, filterUserId);
+            const result = await this.orderService.getOrderById(id);
 
             return res.status(HTTPSTATUS.OK).json({
                 message: "Order retrieved successfully",
