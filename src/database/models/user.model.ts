@@ -42,7 +42,7 @@ const userSchema = new Schema<UserDocument>(
     },
     isEmailVerified: {
       type: Boolean,
-      default: false,
+      default: true,
     },
     role: {
       type: String,
