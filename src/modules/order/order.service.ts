@@ -444,6 +444,30 @@ export class OrderService {
     return { order: populatedOrder, message: "Order cancelled successfully" };
   }
 
+  // TRACK ORDER BY ORDER ID AND BILLING EMAIL
+  public async trackOrder(orderId: string, billingEmail: string) {
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      throw new BadRequestException("Invalid order ID");
+    }
+    const order = await OrderModel.findById(orderId).populate("userId", "email name");
+    if (!order) {
+      throw new NotFoundException("Order not found");
+    }
+    // @ts-ignore
+    if (!order.userId || order.userId.email !== billingEmail) {
+      throw new BadRequestException("Email does not match order");
+    }
+    return {
+      orderId: order._id,
+      status: order.orderStatus,
+      paymentStatus: order.paymentStatus,
+      totalAmount: order.totalAmount,
+      createdAt: order.createdAt,
+      items: order.items,
+      shippingAddress: order.shippingAddress,
+    };
+  }
+
   // GET DASHBOARD STATISTICS
   public async getDashboardStats() {
     const now = new Date();

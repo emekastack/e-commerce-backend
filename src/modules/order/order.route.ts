@@ -9,6 +9,7 @@ const orderRoutes = Router();
 // Public Routes
 // orderRoutes.post("/verify/:reference", orderController.verifyPayment);
 orderRoutes.get("/payment-status/:reference", orderController.getPaymentStatus);
+orderRoutes.get("/track", orderController.trackOrder);
 
 // Private Routes (Authenticated Users)
 orderRoutes.use(authenticateJWT); // Apply authentication to all routes below
@@ -18,7 +19,7 @@ orderRoutes.get("/user/last-address", orderController.getUserLastAddress);
 orderRoutes.get("/reinitialize/:orderId", orderController.reinitializePayment);
 orderRoutes.get("/user", orderController.getUserOrders);
 orderRoutes.get("/:id", orderController.getOrderById);
-// orderRoutes.patch("/:id/cancel", orderController.cancelOrder);
+orderRoutes.patch("/:id/cancel", orderController.cancelOrder); 
 
 // Admin Routes (Protected)
 orderRoutes.get("/admin/all", adminRoute, orderController.getAllOrders);

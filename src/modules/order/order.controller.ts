@@ -288,4 +288,28 @@ export class OrderController {
         }
     );
 
+    /**
+     * @desc Track order by orderId and billingEmail
+     * @route GET /orders/track?orderId=...&billingEmail=...
+     * @access Public
+     */
+    public trackOrder = asyncHandler(
+        async (req: Request, res: Response) => {
+            const { orderId, billingEmail } = req.query;
+            if (!orderId || !billingEmail) {
+                return res.status(HTTPSTATUS.BAD_REQUEST).json({
+                    message: "Order ID and billing email are required",
+                });
+            }
+            const result = await this.orderService.trackOrder(
+                orderId as string,
+                billingEmail as string
+            );
+            return res.status(HTTPSTATUS.OK).json({
+                message: "Order found",
+                ...result,
+            });
+        }
+    );
+
 }
