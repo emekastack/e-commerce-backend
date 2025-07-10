@@ -38,11 +38,10 @@ export class CartController {
            const userId = (req as any).user?.userId;
             const cartData = addToCartSchema.parse(req.body);
 
-            const { cart } = await this.cartService.addToCart(userId, cartData);
+            const { message } = await this.cartService.addToCart(userId, cartData);
 
             return res.status(HTTPSTATUS.OK).json({
-                message: "Item added to cart successfully",
-                cart
+                message
             });
         }
     );
@@ -57,11 +56,10 @@ export class CartController {
             const userId = (req as any).user?.userId;
             const updateData = updateCartItemSchema.parse(req.body);
 
-            const { cart } = await this.cartService.updateCartItem(userId, updateData);
+            const { message } = await this.cartService.updateCartItem(userId, updateData);
 
             return res.status(HTTPSTATUS.OK).json({
-                message: "Cart item updated successfully",
-                cart
+                message,
             });
         }
     );
@@ -76,11 +74,10 @@ export class CartController {
             const userId = (req as any).user?.userId;
             const { productId } = req.params;
 
-            const { cart } = await this.cartService.removeFromCart(userId, productId);
+            const { message } = await this.cartService.removeFromCart(userId, productId);
 
             return res.status(HTTPSTATUS.OK).json({
-                message: "Item removed from cart successfully",
-                cart
+                message,
             });
         }
     );

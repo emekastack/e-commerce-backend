@@ -23,8 +23,8 @@ type SignOptsAndSecret = SignOptions & {
   secret: string;
 };
 
-const defaults: SignOptions = {
-  audience: ["user"],
+const defaults = {
+  audience: "user" as string, // jsonwebtoken expects a string, RegExp, or tuple
 };
 
 type ExpiresIn = number | undefined | StringValue;
