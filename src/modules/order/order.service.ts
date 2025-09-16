@@ -11,6 +11,7 @@ import {
   NotFoundException,
 } from "../../common/utils/catch-errors";
 import { PaystackService } from "../paystack/paystack.service";
+import { FlutterwaveService } from "../flutterwave/flutterwave.service";
 import mongoose from "mongoose";
 import { PaginationResult } from "../../common/interface/product.inteface";
 
@@ -41,9 +42,11 @@ interface OrderFilters {
 
 export class OrderService {
   private paystackService: PaystackService;
+  private flutterwaveService: FlutterwaveService;
 
   constructor() {
     this.paystackService = new PaystackService();
+    this.flutterwaveService = new FlutterwaveService();
   }
 
   // HANDLE SUCCESSFUL PAYMENT FROM WEBHOOK
@@ -124,7 +127,7 @@ export class OrderService {
 
   // CREATE ORDER FROM CART
   public async createOrder(orderData: CreateOrderData) {
-    const { userId, shippingAddress, paymentMethod = "paystack" } = orderData;
+    const { userId, shippingAddress, paymentMethod = "flutterwave" } = orderData;
 
     // Validate user exists
     const user = await UserModel.findById(userId);
@@ -167,7 +170,7 @@ export class OrderService {
     }
 
     // Generate payment reference
-    const paymentReference = this.paystackService.generateReference();
+    const paymentReference = this.flutterwaveService.generateReference();
 
     // Create order
     const order = await OrderModel.create({
@@ -181,8 +184,8 @@ export class OrderService {
       paymentStatus: PaymentStatus.PENDING,
     });
 
-    // Initialize payment
-    const paymentData = await this.paystackService.initializeTransaction(
+    // Initialize payment (Flutterwave)
+    const paymentData = await this.flutterwaveService.initializePayment(
       user.email,
       totalAmount,
       paymentReference,
@@ -203,7 +206,7 @@ export class OrderService {
     //     .populate("items.product", "name imageUrl");
 
     return {
-      paymentUrl: paymentData.data.authorization_url,
+      paymentUrl: paymentData.authorization_url,
     };
   }
 
@@ -221,10 +224,10 @@ export class OrderService {
     }
 
     // Generate new payment reference
-    const newReference = this.paystackService.generateReference();
+    const newReference = this.flutterwaveService.generateReference();
 
-    // Initialize payment with Paystack
-    const paymentData = await this.paystackService.initializeTransaction(
+    // Initialize payment with Flutterwave
+    const paymentData = await this.flutterwaveService.initializePayment(
       user.email,
       order.totalAmount,
       newReference,
@@ -242,7 +245,7 @@ export class OrderService {
     order.paymentReference = newReference;
     await order.save();
 
-    return { paymentUrl: paymentData.data.authorization_url };
+    return { paymentUrl: paymentData.authorization_url };
   }
 
   // GET USER ORDERS
