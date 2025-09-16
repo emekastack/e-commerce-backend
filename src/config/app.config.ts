@@ -29,6 +29,10 @@ const appConfig = () => ({
   //paystack
   PAYSTACK_SECRET_KEY: getEnv("PAYSTACK_SECRET_KEY"),
   PAYSTACK_PUBLIC_KEY: getEnv("PAYSTACK_PUBLIC_KEY"),
+  // flutterwave
+  FLW_SECRET_KEY: getEnv("FLW_SECRET_KEY"),
+  FLW_PUBLIC_KEY: getEnv("FLW_PUBLIC_KEY"),
+  FLW_SECRET_HASH: getEnv("FLW_SECRET_HASH"),
 });
 
 export const config = appConfig();
