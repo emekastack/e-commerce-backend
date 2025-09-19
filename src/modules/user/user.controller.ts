@@ -2,15 +2,18 @@ import { Request, Response } from "express";
 import { NotFoundException } from "../../common/utils/catch-errors";
 import { HTTPSTATUS } from "../../config/http.config";
 import { asyncHandler } from "../../middlewares/asyncHandler";
-import { UserService } from "./user.service";
+import { PasswordService, UserService } from "./user.service";
+import { updatePasswordSchema } from "../../common/validators/user.validator";
 import { customerSearchSchema } from "../../common/validators/product.validator";
 
 
 export class UserController {
     private userService: UserService;
+  private passwordService: PasswordService;
 
-    constructor(userService: UserService) {
-        this.userService = userService
+  constructor(userService: UserService) {
+    this.userService = userService
+    this.passwordService = new PasswordService();
     }
 
     public getSession = asyncHandler(async (req: Request, res: Response) => {
@@ -27,6 +30,22 @@ export class UserController {
             user,
         })
     })
+
+  /**
+  * @desc Update own password (user or admin)
+  * @route PATCH /user/password
+  * @access Private
+  */
+  public updatePassword = asyncHandler(async (req: Request, res: Response) => {
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      return res.status(HTTPSTATUS.UNAUTHORIZED).json({ message: "User not authenticated" });
+    }
+
+    const { currentPassword, newPassword } = updatePasswordSchema.parse(req.body);
+    const result = await this.passwordService.updatePassword(userId, { currentPassword, newPassword });
+    return res.status(HTTPSTATUS.OK).json(result);
+  });
 
     /**
     * @desc Get all customers

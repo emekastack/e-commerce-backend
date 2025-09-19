@@ -4,6 +4,7 @@ import SessionModel from "../../database/models/session.model";
 import { customerSearchSchema } from "../../common/validators/product.validator";
 import { hash } from "bcrypt";
 import UserModel from "../../database/models/user.model";
+import { updatePasswordSchema } from "../../common/validators/user.validator";
 
 export class UserService {
   public async getSessionById(sessionId: string) {
@@ -79,5 +80,26 @@ public async searchCustomers(searchParams: z.infer<typeof customerSearchSchema>)
         }
     };
 }
- 
+
+}
+
+export class PasswordService {
+  public async updatePassword(userId: string, payload: { currentPassword: string; newPassword: string }) {
+    const { currentPassword, newPassword } = updatePasswordSchema.parse(payload);
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      throw new NotFoundException("Current password is incorrect");
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return { message: "Password updated successfully" };
+  }
 }
